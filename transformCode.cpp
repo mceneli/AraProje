@@ -9,7 +9,7 @@
 #include <set>
 #include <experimental/filesystem>
 
-std::set <std::string> dataTypes = {"signed", "unsigned", "char", "short", "int", "FILE"};
+std::set <std::string> dataTypes = {"signed", "unsigned", "char", "short", "int", "long", "FILE"};
 
 std::string removeComments(const std::string &path);
 std::string removeSpaces(const std::string &path);
