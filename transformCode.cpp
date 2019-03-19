@@ -6,10 +6,12 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <map>
 #include <set>
 #include <experimental/filesystem>
 
-std::set <std::string> dataTypes = {"signed", "unsigned", "char", "short", "int", "long", "FILE"};
+std::set <std::string> ignorable, keywords;
+std::map <std::string, std::string> dataTypes, variables;
 
 std::string removeComments(const std::string &path);
 std::string removeSpaces(const std::string &path);
@@ -28,7 +30,7 @@ int main()
         std::string fullCode = removeComments(code.path());
         fullCode = removeSpaces(fullCode);
         removeQuotes(fullCode);
-        std::cout << fullCode << std::endl;
+        std::cout << fullCode << "\n\n";
         //transformCode(k, code.path());
     }
 
@@ -52,18 +54,51 @@ std::string removeComments(const std::string &path)
 }
 
 bool skipLine(const std::string &line);
+std::string formatLine(const std::string &line);
 std::string removeSpaces(const std::string &fullCode)
 {
     std::stringstream ss(fullCode);
-    std::string line, newCode;
+    std::string line, newCode, result;
 
     while (getline(ss, line))
         if (!skipLine(line))
-            newCode += line;
+            newCode += formatLine(line);          
 
-    newCode.erase(std::remove_if(newCode.begin(), newCode.end(), isspace), newCode.end());
+    std::unique_copy(newCode.begin(), newCode.end(), std::back_insert_iterator <std::string> (result), 
+                     [] (char a, char b) { return isspace(a) && isspace(b);});
 
-    return newCode;
+    return result;
+}
+
+bool isMathSign(char ch) { return ch == '=' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%'; };
+std::string formatLine(const std::string &line)
+{
+    std::string formattedLine;
+    int j = 0;
+
+    while (j < line.size())
+    {
+        if (j+1 < line.size() && ((line[j] == '-' && line[j+1] == '>') || (isMathSign(line[j]) && isMathSign(line[j+1]))))
+        {
+            formattedLine.push_back(' ');
+            formattedLine.push_back(line[j]);
+            formattedLine.push_back(line[j+1]);
+            formattedLine.push_back(' ');
+            ++j;
+        }
+        else if (line[j] != '_' && ispunct(line[j]))
+        {
+            formattedLine.push_back(' ');
+            formattedLine.push_back(line[j]);
+            formattedLine.push_back(' ');
+        }
+        else
+            formattedLine.push_back(line[j]);
+
+        ++j;
+    }
+
+    return formattedLine;
 }
 
 // removing contents of quotes
@@ -90,9 +125,13 @@ void removeQuotes(std::string &code)
 
 void transformCode(int k, std::string &code)
 {
+    std::stringstream ss(code);
+    std::string word;
 
-
-    std::cout << code << std::endl;
+    while (ss >> word)
+    {
+        // dönüştürmeler
+    }
 }
 
 // if the line begins with "#include"
@@ -117,4 +156,24 @@ bool skipLine(const std::string &line)
     }
 
     return false;
+}
+
+
+void initializeSets()
+{
+    dataTypes = {std::make_pair("bool", "_bool_"), 
+                 std::make_pair("char", "_char_"),
+                 std::make_pair("wchar_t", "_char_"), // wide char data type
+                 std::make_pair("short", "_int_"),
+                 std::make_pair("signed", "_int_"),
+                 std::make_pair("unsigned", "_int_"),
+                 std::make_pair("int", "_int_"),
+                 std::make_pair("long", "_int_"),
+                 std::make_pair("void", "_void_"),
+                 std::make_pair("FILE", "_file_")};
+
+    ignorable = {"const", "static"};
+
+    keywords = {"if", "else", "switch", "case", "for", "while", "do", "break", "continue", "goto", 
+                "inline", "extern", "true", "false", "struct", "typedef", "return"};
 }
