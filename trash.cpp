@@ -1,26 +1,27 @@
 #include <iostream>
+#include <sstream>
 #include <set>
 #include <map>
 
+void dosome(std::stringstream &ss)
+{
+    std::string word;
+    ss >> word;
+    std::cout << word << std::endl;
+    ss >> word;
+    std::cout << word << std::endl;
+}
+
 int main()
 {
-    std::set <int> st;
+    std::stringstream ss("abc def ghi jkl");
 
-    st = {1, 5, 7};
-
-    std::cout << (st.find(1) == st.end()) << std::endl;
-    std::cout << (st.find(5) == st.end()) << std::endl;
-    std::cout << (st.find(7) == st.end()) << std::endl;
-    std::cout << (st.find(9) == st.end()) << std::endl;
-    std::cout << (st.find(2) == st.end()) << std::endl;
-
-
-    std::map <int, int> mp = {std::make_pair(5, 5)};
-
-    std::string str = "abc";
-    str.append('a', 'b');
-
-    std::cout << str << std::endl;
+    std::string word;
+    ss >> word;
+    std::cout << word << std::endl;
+    dosome(ss);
+    ss >> word;
+    std::cout << word << std::endl;
 
     return 0;
 }
