@@ -3,25 +3,30 @@
 #include <set>
 #include <map>
 
-void dosome(std::stringstream &ss)
+bool isNumber(const std::string &str)
 {
-    std::string word;
-    ss >> word;
-    std::cout << word << std::endl;
-    ss >> word;
-    std::cout << word << std::endl;
+    int num_of_e = 0; // the number may be in form of 1e10, 1e15, 2e3...
+
+    for (int i = 0; i < str.size(); ++i)
+        if (!isdigit(str[i]))
+        {
+            if (str[i] == 'e')
+            {
+                ++num_of_e;
+
+                if (num_of_e > 1)
+                    return false;
+            }
+            else
+                return false;
+        }
+
+    return num_of_e == 0 ? true : str[0] != 'e' && str[str.size()-1] != 'e' ? true : false;
 }
 
 int main()
 {
-    std::stringstream ss("abc def ghi jkl");
-
-    std::string word;
-    ss >> word;
-    std::cout << word << std::endl;
-    dosome(ss);
-    ss >> word;
-    std::cout << word << std::endl;
+    std::cout << isNumber("e34") << std::endl;
 
     return 0;
 }

@@ -2,7 +2,10 @@
 
 int main()
 {
-    int x = 5, y = 10, z =   x   *y;
+    int x, y = 10;
+    int z =   x   *y;
+    long l = 1e5;
+
     char *name = "osman";
 
     printf("%d\n",    z);

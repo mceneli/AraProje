@@ -11,7 +11,8 @@
 #include <experimental/filesystem>
 
 std::set <std::string> ignorable, keywords, functions;
-std::map <std::string, std::string> dataTypes, variables;
+std::map <std::string, std::string> dataTypes;
+std::map <std::string, std::string> variables;
 
 std::string removeComments(const std::string &path);
 std::string removeSpaces(const std::string &path);
@@ -74,6 +75,30 @@ std::string removeSpaces(const std::string &fullCode)
     return result;
 }
 
+// if the line begins with "#include"
+bool skipLine(const std::string &line)
+{
+    if (line.size() == 0)
+        return true;
+
+    std::stringstream ss(line);
+    std::string word;
+    ss >> word;
+
+    if (word[0] == '#')
+    {
+        word.erase(0, 1);
+
+        if (word.size() == 0)
+            ss >> word;
+
+        if (word.size() >= 7 && word.substr(0, 7) == "include")
+            return true;
+    }
+
+    return false;
+}
+
 bool isMathSign(char ch) { return ch == '=' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%'; };
 std::string formatLine(const std::string &line)
 {
@@ -128,6 +153,7 @@ void removeQuotes(std::string &code)
 }
 
 void processVariables(std::stringstream &ss, std::string &dataType, std::string &varName, std::string &punct, std::string &finalCode);
+void processFunctionDeclarations(std::stringstream &ss, std::string &funcName, std::string &finalCode);
 std::string transformCode(int k, const std::string &code)
 {
     std::stringstream ss(code);
@@ -138,39 +164,63 @@ std::string transformCode(int k, const std::string &code)
         // dönüştürmeler
         if (dataTypes.find(word) != dataTypes.end())
         {
-            // a data type dedected, it may specify a variable or a function
+            // a data type dedected, it may specify a variable or a function decleration
             std::string name, punct;
             ss >> name; // getting the name of the variable/function
+
+            if (name[0] == '*') // if there is a pointer, ignore it
+                ss >> name;
+
             ss >> punct; // getting the punctuation after the name
 
             // if the following punctuation is a comma, semicolon or a equals sign, 
             // it means that we found a variable
             if (punct == "," || punct == ";" || punct == "=")
                 processVariables(ss, word, name, punct, finalCode);
+            else if (punct == "(")
+                processFunctionDeclarations(ss, name, finalCode);
         }
     }
 
     return finalCode;
 }
 
-bool isNumber(std::string &str)
+bool isNumber(const std::string &str)
 {
+    int num_of_e = 0; // the number may be in form of 1e10, 1e15, 2e3...
+
     for (int i = 0; i < str.size(); ++i)
         if (!isdigit(str[i]))
-            return false;
+        {
+            if (str[i] == 'e')
+            {
+                ++num_of_e;
 
-    return true;
+                if (num_of_e > 1)
+                    return false;
+            }
+            else
+                return false;
+        }
+
+    return num_of_e == 0 ? true : str[0] != 'e' && str[str.size()-1] != 'e' ? true : false;
 }
+
 void processVariables(std::stringstream &ss, std::string &dataType, std::string &varName, std::string &punct, std::string &finalCode)
 {
-    variables.insert(std::make_pair(varName, dataTypes[dataType]));
+    variables.insert(std::make_pair(varName,  dataTypes[dataType]));
     std::string word = punct, equation;
     
     while (word != ";")
     {
         if (word == ",")
         {
+            finalCode += ',';
             ss >> varName; // getting the next variable
+
+            if (varName[0] == '*') // if there is a pointer, ignore it
+                ss >> varName;
+
             variables.insert(std::make_pair(varName, dataTypes[dataType]));
             ss >> word;
         }
@@ -181,7 +231,6 @@ void processVariables(std::stringstream &ss, std::string &dataType, std::string 
 
             while (word != "," && word != ";")
             {
-                //std::cout << word << std::endl;
                 if (isNumber(word))
                     equation += "_int_";
                 else if (variables.find(word) != variables.end())
@@ -198,33 +247,20 @@ void processVariables(std::stringstream &ss, std::string &dataType, std::string 
         //ss >> word;
     }
 
-    finalCode += ',';
+    finalCode += ';';
 }
 
-// if the line begins with "#include"
-bool skipLine(const std::string &line)
+void processFunctionDeclarations(std::stringstream &ss, std::string &funcName, std::string &finalCode)
 {
-    if (line.size() == 0)
-        return true;
-
-    std::stringstream ss(line);
     std::string word;
     ss >> word;
 
-    if (word[0] == '#')
-    {
-        word.erase(0, 1);
+    while (word != ")")
+        ss >> word;
 
-        if (word.size() == 0)
-            ss >> word;
-
-        if (word.size() >= 7 && word.substr(0, 7) == "include")
-            return true;
-    }
-
-    return false;
+    if (functions.find(funcName) == functions.end())
+        functions.insert(funcName);
 }
-
 
 void initializeSets()
 {
