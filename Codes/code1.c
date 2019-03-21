@@ -1,14 +1,13 @@
 #  include     <stdio.h>
 
+int aFunction(int x, int y)
+{
+    return x+y;
+}
+
 int main()
 {
-    int x, y = 10;
-    int z =   x   *y;
-    long l = 1e5;
-
-    char *name = "osman";
-
-    printf("%d\n",    z);
+    int x, y =  5 + aFunction(5, x) + y;
 
     return 0;
 }

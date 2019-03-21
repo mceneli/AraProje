@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <stack>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -10,9 +11,7 @@
 #include <set>
 #include <experimental/filesystem>
 
-std::set <std::string> ignorable, keywords, functions;
-std::map <std::string, std::string> dataTypes;
-std::map <std::string, std::string> variables;
+std::set <std::string> dataTypes, ignorable, keywords, functions;
 
 std::string removeComments(const std::string &path);
 std::string removeSpaces(const std::string &path);
@@ -31,7 +30,8 @@ int main()
     for (const auto &code: std::experimental::filesystem::directory_iterator(path))
     {
         std::cout << code.path() << std::endl;
-        std::string fullCode = removeComments(code.path());
+        std::string path = code.path();
+        std::string fullCode = removeComments(path);
         fullCode = removeSpaces(fullCode);
         removeQuotes(fullCode);
         std::cout << fullCode << "\n";
@@ -99,7 +99,7 @@ bool skipLine(const std::string &line)
     return false;
 }
 
-bool isMathSign(char ch) { return ch == '=' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%'; };
+bool isMathSign(char ch) { return ch == '=' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '(' || ch == ')'; };
 std::string formatLine(const std::string &line)
 {
     std::string formattedLine;
@@ -152,7 +152,18 @@ void removeQuotes(std::string &code)
     }
 }
 
-void processVariables(std::stringstream &ss, std::string &dataType, std::string &varName, std::string &punct, std::string &finalCode);
+std::string insertCurlyBraces(std::string &code)
+{
+    std::stringstream ss(code);
+    std::string newCode, word;
+    std::stack <int> braceStack;
+
+
+
+    return newCode;
+}
+
+void processVariables(std::stringstream &ss, std::string &punct, std::string &finalCode);
 void processFunctionDeclarations(std::stringstream &ss, std::string &funcName, std::string &finalCode);
 std::string transformCode(int k, const std::string &code)
 {
@@ -165,19 +176,19 @@ std::string transformCode(int k, const std::string &code)
         if (dataTypes.find(word) != dataTypes.end())
         {
             // a data type dedected, it may specify a variable or a function decleration
-            std::string name, punct;
+            std::string name;
             ss >> name; // getting the name of the variable/function
 
-            if (name[0] == '*') // if there is a pointer, ignore it
-                ss >> name;
+            if (word[0] == '*') // if there is a pointer, ignore it
+                ss >> word;
 
-            ss >> punct; // getting the punctuation after the name
+            ss >> word; // getting the punctuation after the name
 
             // if the following punctuation is a comma, semicolon or a equals sign, 
             // it means that we found a variable
-            if (punct == "," || punct == ";" || punct == "=")
-                processVariables(ss, word, name, punct, finalCode);
-            else if (punct == "(")
+            if (word == "," || word == ";" || word == "=")
+                processVariables(ss, word, finalCode);
+            else if (word == "(")
                 processFunctionDeclarations(ss, name, finalCode);
         }
     }
@@ -206,48 +217,65 @@ bool isNumber(const std::string &str)
     return num_of_e == 0 ? true : str[0] != 'e' && str[str.size()-1] != 'e' ? true : false;
 }
 
-void processVariables(std::stringstream &ss, std::string &dataType, std::string &varName, std::string &punct, std::string &finalCode)
+std::string functionCall(std::stringstream &ss);
+void processVariables(std::stringstream &ss, std::string &word, std::string &finalCode)
 {
-    variables.insert(std::make_pair(varName,  dataTypes[dataType]));
-    std::string word = punct, equation;
+    std::string equation;
     
     while (word != ";")
     {
         if (word == ",")
         {
             finalCode += ',';
-            ss >> varName; // getting the next variable
+            ss >> word; // getting the next variable
 
-            if (varName[0] == '*') // if there is a pointer, ignore it
-                ss >> varName;
+            if (word[0] == '*') // if there is a pointer, ignore it
+                ss >> word;
 
-            variables.insert(std::make_pair(varName, dataTypes[dataType]));
             ss >> word;
         }
         else if (word == "=")
         {
-            equation = dataTypes[dataType] + "=";
+            equation = "_var_=";
             ss >> word;
 
             while (word != "," && word != ";")
             {
-                if (isNumber(word))
-                    equation += "_int_";
-                else if (variables.find(word) != variables.end())
-                    equation += variables[word]; // adding the data type of the word
-                else
+                if (functions.find(word) != functions.end()) // function call
+                    equation += functionCall(ss);
+                else if (isMathSign(word[0]))
                     equation += word;
+                else
+                    equation += "_var_";
 
                 ss >> word;
             }
             
             finalCode += equation;
         }
-
-        //ss >> word;
     }
 
     finalCode += ';';
+}
+
+std::string functionCall(std::stringstream &ss)
+{
+    std::string equation = "_fnc_(", word;
+    ss >> word; // '(' character
+
+    while (word != ")")
+    {
+        equation += "_var_";
+        ss >> word;
+
+        while (word != ")" && word != ",")
+            ss >> word;
+
+        if (word == ",")
+            equation += ",";
+    }
+
+    return equation + ")";
 }
 
 void processFunctionDeclarations(std::stringstream &ss, std::string &funcName, std::string &finalCode)
@@ -264,16 +292,7 @@ void processFunctionDeclarations(std::stringstream &ss, std::string &funcName, s
 
 void initializeSets()
 {
-    dataTypes = {std::make_pair("bool", "_boo_"), 
-                 std::make_pair("char", "_chr_"),
-                 std::make_pair("wchar_t", "_chr_"), // wide char data type
-                 std::make_pair("short", "_int_"),
-                 std::make_pair("signed", "_int_"),
-                 std::make_pair("unsigned", "_int_"),
-                 std::make_pair("int", "_int_"),
-                 std::make_pair("long", "_int_"),
-                 std::make_pair("void", "_voi_"),
-                 std::make_pair("FILE", "_fil_")};
+    dataTypes = {"bool", "char", "wchar_t", "signed", "unsigned", "short", "int", "long", "void", "FILE"};
 
     ignorable = {"const", "static"};
 
