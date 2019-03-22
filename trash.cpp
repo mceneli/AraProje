@@ -5,16 +5,12 @@
 
 int main()
 {
-    int x = 5;
-    char x = 'a';
+    std::stringstream ss("abc def ghi");
+    std::string word;
 
-    /*if (x > 3)
+    while (!ss.eof())
     {
-        int x = 10;
-
-        std::cout << x << std::endl;
-        std::cout << ::x << std::endl;
-    }*/
-
-    return 0;
+        ss >> word;
+        std::cout << word << std::endl;
+    }
 }
