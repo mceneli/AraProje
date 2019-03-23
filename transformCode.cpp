@@ -1,5 +1,17 @@
 // compilation: g++ transformCode.cpp -lstdc++fs
 
+/*
+    Yapılacaklar Listesi:
+    + değişken tanımlamaları
+    + fonksiyon tanımlamaları
+    + koşullu ifadeler
+    + döngüler
+    + işlemler
+    - noktalı virgüller
+    - struct erişimleri: ".", "->"
+    - diziler: A[]
+*/
+
 #include <iostream>
 #include <algorithm>
 #include <vector>
@@ -28,7 +40,6 @@ int main()
 
     for (const auto &code: std::experimental::filesystem::directory_iterator(path))
     {
-        std::cout << code.path() << std::endl;
         std::string path = code.path();
         std::string fullCode = removeComments(path);
         fullCode = removeSpaces(fullCode);
@@ -57,7 +68,7 @@ std::string removeComments(const std::string &path)
     return result;
 }
 
-bool skipLine(const std::string &line);
+bool skipLine(const std::string &line) { return line.size() == 0 || line[0] == '#'; }
 std::string formatLine(const std::string &line);
 std::string removeSpaces(const std::string &fullCode)
 {
@@ -72,30 +83,6 @@ std::string removeSpaces(const std::string &fullCode)
                      [] (char a, char b) { return isspace(a) && isspace(b);});
 
     return result;
-}
-
-// if the line begins with "#include"
-bool skipLine(const std::string &line)
-{
-    if (line.size() == 0)
-        return true;
-
-    std::stringstream ss(line);
-    std::string word;
-    ss >> word;
-
-    if (word[0] == '#')
-    {
-        word.erase(0, 1);
-
-        if (word.size() == 0)
-            ss >> word;
-
-        if (word.size() >= 7 && word.substr(0, 7) == "include")
-            return true;
-    }
-
-    return false;
 }
 
 bool isMathSign(char ch) { return ch == '=' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '>' || ch == '<'; }
@@ -151,9 +138,13 @@ void removeQuotes(std::string &code)
     }
 }
 
-void processVariables(std::stringstream &ss, std::string &punct, std::string &finalCode);
+std::string processStatement(std::stringstream &ss, std::string &word, bool isConditionOrLoop);
+std::string processFunctionCall(std::stringstream &ss);
+void processDeclarations(std::stringstream &ss, std::string &word, std::string &finalCode);
+void processVariableDeclarations(std::stringstream &ss, std::string &punct, std::string &finalCode);
 void processFunctionDeclarations(std::stringstream &ss, std::string &funcName, std::string &finalCode);
 void processConditions(std::stringstream &ss, std::string &word, std::string &finalCode);
+void processLoops(std::stringstream &ss, std::string &word, std::string &finalCode);
 std::string transformCode(int k, const std::string &code)
 {
     std::stringstream ss(code);
@@ -162,35 +153,55 @@ std::string transformCode(int k, const std::string &code)
     while (!ss.eof())
     {
         // dönüştürmeler
-        if (dataTypes.find(word) != dataTypes.end())
-        {
-            // a data type dedected, it may specify a variable or a function decleration
-            std::string name;
-            ss >> name; // getting the name of the variable/function
-
-            // we ignore the additional data types, like long int x, const static signed long x...
-            // also if there is a pointer or a reference, ignore it
-            if (ignorable.find(name) != ignorable.end() || dataTypes.find(name) != dataTypes.end() || name[0] == '*' || name[0] == '&') 
-                ss >> name;
-
-            ss >> word; // getting the punctuation after the name
-
-            // if the following punctuation is a comma or a equals sign, 
-            // it means that we found a variable assignment
-            if (word == "," || word == "=")
-                processVariables(ss, word, finalCode);
-            else if (word == "(") //  a function decleration
-                processFunctionDeclarations(ss, name, finalCode);
-
+        if (ignorable.find(word) != ignorable.end() || word == "")
             ss >> word;
-        }
+        else if (dataTypes.find(word) != dataTypes.end())
+            processDeclarations(ss, word, finalCode);
         else if (conditions.find(word) != conditions.end())
             processConditions(ss, word, finalCode);
-        else
+        else if (loops.find(word) != loops.end())
+            processLoops(ss, word, finalCode);
+        else if (word == "return")
+        {
+            finalCode += "_r_";
             ss >> word;
+        }
+        else if (word == ";")
+        {
+            finalCode += ";";
+            ss >> word;
+        }
+        else
+        {
+            finalCode += processStatement(ss, word, false);
+            ss >> word;
+        }
     }
 
     return finalCode;
+}
+
+void processDeclarations(std::stringstream &ss, std::string &word, std::string &finalCode)
+{
+    // a data type dedected, it may specify a variable or a function decleration
+    std::string name;
+    ss >> name; // getting the name of the variable/function
+
+    // we ignore the additional data types, like long int x, const static signed long x...
+    // also if there is a pointer or a reference, ignore it
+    if (ignorable.find(name) != ignorable.end() || dataTypes.find(name) != dataTypes.end() || name[0] == '*' || name[0] == '&') 
+        ss >> name;
+
+    ss >> word; // getting the punctuation after the name
+
+    // if the following punctuation is a comma or a equals sign, 
+    // it means that we found a variable assignment
+    if (word == "," || word == "=")
+        processVariableDeclarations(ss, word, finalCode);
+    else if (word == "(") //  a function decleration
+        processFunctionDeclarations(ss, name, finalCode);
+
+    ss >> word;
 }
 
 bool isNumber(const std::string &str)
@@ -214,8 +225,7 @@ bool isNumber(const std::string &str)
     return num_of_e == 0 ? true : str[0] != 'e' && str[str.size()-1] != 'e' ? true : false;
 }
 
-std::string processStatement(std::stringstream &ss, std::string &word, bool isConditionOrLoop);
-void processVariables(std::stringstream &ss, std::string &word, std::string &finalCode)
+void processVariableDeclarations(std::stringstream &ss, std::string &word, std::string &finalCode)
 {
     std::string equation;
     
@@ -234,14 +244,13 @@ void processVariables(std::stringstream &ss, std::string &word, std::string &fin
         else if (word == "=")
         {
             ss >> word;
-            finalCode += "_var_=" + processStatement(ss, word, false);;
+            finalCode += "_v_=" + processStatement(ss, word, false);;
         }
     }
 
     finalCode += ';';
 }
 
-std::string processFunctionCall(std::stringstream &ss);
 std::string processStatement(std::stringstream &ss, std::string &word, bool isConditionOrLoop)
 {
     std::string statement;
@@ -254,7 +263,7 @@ std::string processStatement(std::stringstream &ss, std::string &word, bool isCo
         else if (isMathSign(word[0]) || word == "(" || word == ")" || word == "&" || word == "|")
             statement += word;
         else
-            statement += "_var_";
+            statement += "_v_";
 
         if (isConditionOrLoop)
         {
@@ -267,18 +276,21 @@ std::string processStatement(std::stringstream &ss, std::string &word, bool isCo
         ss >> word;
     }
 
+    /*if (word == ";")
+        statement += ";";*/
+
     return statement;
 }
 
 std::string processFunctionCall(std::stringstream &ss)
 {
-    std::string equation = "_fnc_(", word;
+    std::string equation = "_f_(", word;
     ss >> word; // '(' character
     ss >> word;
 
     while (word != ")")
     {
-        equation += "_par_";
+        equation += "_p_";
         ss >> word;
 
         while (word != ")" && word != ",")
@@ -305,38 +317,82 @@ void processFunctionDeclarations(std::stringstream &ss, std::string &funcName, s
 
 void processConditions(std::stringstream &ss, std::string &word, std::string &finalCode)
 {
-    if (word == "case")
+    if (word == "switch")
     {
-        finalCode += "_cond_(_var_==_var_)";
         ss >> word;
-        return;
+        ss >> word;
+        processStatement(ss, word, true);
+        ss >> word;
     }
-
-    bool isElse = (word == "else");
-    ss >> word;
-        
-    if (isElse && word != "if")
+    else if (word == "case")
     {
-        finalCode += "_cond_()";
-        return;
+        finalCode += "_c_(_v_==_v_)";
+        ss >> word;
+        ss >> word;
+        ss >> word;
     }
+    else if (word == "default")
+    {
+        finalCode += "_c_()";
+        ss >> word;
+        ss >> word;
+    }
+    else
+    {
+        bool isElse = (word == "else");
+        ss >> word;
+            
+        if (isElse && word != "if")
+            finalCode += "_c_()";
+        else
+        {
+            if (word == "if") // the condition is "else if"
+                ss >> word; // getting '(' character
 
-    if (word == "if") // the condition is "else if"
-        ss >> word; // getting '(' character
+            ss >> word;
+            finalCode += "_c_(" + processStatement(ss, word, true);
 
-    ss >> word;
-    finalCode += "_cond_(" + processStatement(ss, word, true);
+            //ss >> word;
+        }
+    }
+}
 
-    ss >> word;
+void processLoops(std::stringstream &ss, std::string &word, std::string &finalCode)
+{
+    if (word == "for")
+    {
+        ss >> word;
+
+        while (word != ";")
+            ss >> word;
+
+        ss >> word;
+
+        finalCode += "_l_(" + processStatement(ss, word, true) + ")";
+
+        ss >> word;
+        processStatement(ss, word, true);
+    }
+    else if (word == "while")
+    {
+        ss >> word;
+        ss >> word;
+        finalCode += "_l_(" + processStatement(ss, word, true);
+    }
+    else // do while
+    {
+        finalCode += "_l_()";
+        ss >> word;
+    }
 }
 
 void initializeSets()
 {
     dataTypes = {"bool", "char", "signed", "unsigned", "short", "int", "long", "void", "FILE"};
 
-    ignorable = {"const", "static", "switch", "break", "continue"};
+    ignorable = {"include", "define", "struct", "const", "static", "break", "continue", "{", "}"};
 
-    conditions = {"if", "else", "case"};
+    conditions = {"if", "else", "switch", "case", "default"};
 
     loops = {"for", "while", "do"};
 

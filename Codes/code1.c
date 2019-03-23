@@ -1,43 +1,32 @@
 #  include     <stdio.h>
 
-int aFunction(int x, int y)
-{
-    return x+y;
-}
-
 int main()
 {
-    int x = 3, y =  5 + aFunction(5, x) + y;
-    int C = 1 + rand() % 10; // number of coming customers
-    int L = 1 + rand() % 5; // number of leaving customers
+    int x = 5 + abs(-3, 4);
+    x = 2*x;
 
-    if ((x > 0) && (5 > 0))
-        x = 2*x;
-    else if (x < 0)
-        x++;
-    else if (x < 1)
+    switch (abs(5))
     {
-        if (x > 0 && x < 0)
-        {
-
-        }
-    }
-    else
-        x--;
-
-    int a = 5;
-
-    switch (a)
-    {
-        case 0:
+        case 1:
             x++;
             break;
-        case 1:
-            x--;
+
+        case 2:
+            x++;
             break;
+    
         default:
             break;
     }
 
+    for (int i = 0; i < 10; ++i)
+        while (i--)
+            if (i > 0)
+                printf("");
+
+    do
+        ++x;
+    while (x > 0);
+    
     return 0;
 }
