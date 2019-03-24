@@ -1,4 +1,5 @@
 // compilation: g++ transformCode.cpp -lstdc++fs
+// resmen compiler yazıyoruz aq
 
 /*
     Yapılacaklar Listesi:
@@ -7,9 +8,16 @@
     + koşullu ifadeler
     + döngüler
     + işlemler
-    - noktalı virgüller
+    + noktalı virgüller
+    + diziler: A[]
+    + goto, label
+    + struct'lar
+    + typedef'ler
+
+    - virgüller
     - struct erişimleri: ".", "->"
-    - diziler: A[]
+    - define'lar
+    - fonksiyon çağrılarının işlemesini değiştir
 */
 
 #include <iostream>
@@ -22,7 +30,7 @@
 #include <set>
 #include <experimental/filesystem>
 
-std::set <std::string> dataTypes, ignorable, keywords, functions, conditions, loops;
+std::set <std::string> dataTypes, functions, conditions, loops, ignorable;
 
 std::string removeComments(const std::string &path);
 std::string removeSpaces(const std::string &path);
@@ -44,7 +52,7 @@ int main()
         std::string fullCode = removeComments(path);
         fullCode = removeSpaces(fullCode);
         removeQuotes(fullCode);
-        std::cout << fullCode << "\n";
+        std::cout << fullCode << "\n\n";
         std::string finalCode = transformCode(k, fullCode);
         std::cout << finalCode << "\n\n";
     }
@@ -68,7 +76,7 @@ std::string removeComments(const std::string &path)
     return result;
 }
 
-bool skipLine(const std::string &line) { return line.size() == 0 || line[0] == '#'; }
+bool skipLine(const std::string &line);
 std::string formatLine(const std::string &line);
 std::string removeSpaces(const std::string &fullCode)
 {
@@ -83,6 +91,19 @@ std::string removeSpaces(const std::string &fullCode)
                      [] (char a, char b) { return isspace(a) && isspace(b);});
 
     return result;
+}
+
+bool skipLine(const std::string &line) 
+{
+    if (line.size() == 0)
+        return true;
+        
+    int j = 0;
+
+    while (j < line.size() && line[j] == ' ')
+        ++j;
+
+    return j == line.size() || line[j] == '#';
 }
 
 bool isMathSign(char ch) { return ch == '=' || ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '>' || ch == '<'; }
@@ -145,30 +166,40 @@ void processVariableDeclarations(std::stringstream &ss, std::string &punct, std:
 void processFunctionDeclarations(std::stringstream &ss, std::string &funcName, std::string &finalCode);
 void processConditions(std::stringstream &ss, std::string &word, std::string &finalCode);
 void processLoops(std::stringstream &ss, std::string &word, std::string &finalCode);
+void processTypedefs(std::stringstream &ss, std::string &word);
 std::string transformCode(int k, const std::string &code)
 {
     std::stringstream ss(code);
     std::string finalCode, word;
+    bool inFunction = false;
 
     while (!ss.eof())
     {
         // dönüştürmeler
         if (ignorable.find(word) != ignorable.end() || word == "")
+        {
             ss >> word;
+
+            if (word == ";")
+                ss >> word;
+        }
         else if (dataTypes.find(word) != dataTypes.end())
             processDeclarations(ss, word, finalCode);
         else if (conditions.find(word) != conditions.end())
             processConditions(ss, word, finalCode);
         else if (loops.find(word) != loops.end())
             processLoops(ss, word, finalCode);
+        else if (word == "typedef") // a new type declaration
+            processTypedefs(ss, word);
+        else if (word == "goto")
+        {
+            ss >> word;
+            ss >> word;
+            ss >> word;
+        }
         else if (word == "return")
         {
             finalCode += "_r_";
-            ss >> word;
-        }
-        else if (word == ";")
-        {
-            finalCode += ";";
             ss >> word;
         }
         else
@@ -184,28 +215,41 @@ std::string transformCode(int k, const std::string &code)
 void processDeclarations(std::stringstream &ss, std::string &word, std::string &finalCode)
 {
     // a data type dedected, it may specify a variable or a function decleration
+
+    if (word == "struct")
+        ss >> word;
+
     std::string name;
     ss >> name; // getting the name of the variable/function
 
-    // we ignore the additional data types, like long int x, const static signed long x...
-    // also if there is a pointer or a reference, ignore it
-    if (ignorable.find(name) != ignorable.end() || dataTypes.find(name) != dataTypes.end() || name[0] == '*' || name[0] == '&') 
-        ss >> name;
+    if (name == "{") // a struct type declaration
+        while (word != "}")
+            ss >> word;
+    else
+    {
+        // we ignore the additional data types, like long int x, const static signed long x...
+        // also if there is a pointer or a reference, ignore it
+        if (ignorable.find(name) != ignorable.end() || dataTypes.find(name) != dataTypes.end() || name[0] == '*' || name[0] == '&') 
+            ss >> name;
 
-    ss >> word; // getting the punctuation after the name
+        ss >> word; // getting the punctuation after the name
 
-    // if the following punctuation is a comma or a equals sign, 
-    // it means that we found a variable assignment
-    if (word == "," || word == "=")
-        processVariableDeclarations(ss, word, finalCode);
-    else if (word == "(") //  a function decleration
-        processFunctionDeclarations(ss, name, finalCode);
+        // if the following punctuation is a comma or a equals sign, 
+        // it means that we found a variable assignment
+        if (word == "," || word == "=" || word == "[")
+            processVariableDeclarations(ss, word, finalCode);
+        else if (word == "(") //  a function decleration
+            processFunctionDeclarations(ss, name, finalCode);
+    }
 
     ss >> word;
 }
 
 bool isNumber(const std::string &str)
 {
+    if (str[0] == 'e' && str[str.size()-1] == 'e')
+        return false;
+
     int num_of_e = 0; // the number may be in form of 1e10, 1e15, 2e3...
 
     for (int i = 0; i < str.size(); ++i)
@@ -222,13 +266,11 @@ bool isNumber(const std::string &str)
                 return false;
         }
 
-    return num_of_e == 0 ? true : str[0] != 'e' && str[str.size()-1] != 'e' ? true : false;
+    return true;
 }
 
 void processVariableDeclarations(std::stringstream &ss, std::string &word, std::string &finalCode)
 {
-    std::string equation;
-    
     while (word != ";")
     {
         if (word == ",")
@@ -244,11 +286,38 @@ void processVariableDeclarations(std::stringstream &ss, std::string &word, std::
         else if (word == "=")
         {
             ss >> word;
-            finalCode += "_v_=" + processStatement(ss, word, false);;
+
+            if (word == "{")
+            {
+                int numOfOpenCurlyBraces = 1;
+                finalCode += "_v_=_v_";
+
+                while (numOfOpenCurlyBraces > 0)
+                {
+                    ss >> word;
+
+                    if (word == "{")
+                        ++numOfOpenCurlyBraces;
+                    else if (word == "}")
+                        --numOfOpenCurlyBraces;
+                }
+
+                finalCode += ';';
+                ss >> word;
+            }
+            else
+                finalCode += "_v_=" + processStatement(ss, word, false);
+        }
+        else if (word == "[")
+        {
+            ss >> word;
+
+            while (word != "]")
+                ss >> word;
+
+            ss >> word;
         }
     }
-
-    finalCode += ';';
 }
 
 std::string processStatement(std::stringstream &ss, std::string &word, bool isConditionOrLoop)
@@ -256,15 +325,8 @@ std::string processStatement(std::stringstream &ss, std::string &word, bool isCo
     std::string statement;
     int numOfOpenParantheses = 1;
 
-    while (word != "," && word != ";" && numOfOpenParantheses > 0)
+    while (word != "," && word != ";" && word != ":" && numOfOpenParantheses > 0)
     {
-        if (functions.find(word) != functions.end()) // function call
-            statement += processFunctionCall(ss);
-        else if (isMathSign(word[0]) || word == "(" || word == ")" || word == "&" || word == "|")
-            statement += word;
-        else
-            statement += "_v_";
-
         if (isConditionOrLoop)
         {
             if (word == "(")
@@ -273,11 +335,38 @@ std::string processStatement(std::stringstream &ss, std::string &word, bool isCo
                 --numOfOpenParantheses;
         }
 
-        ss >> word;
+        if (functions.find(word) != functions.end()) // function call
+        {
+            statement += processFunctionCall(ss);
+            ss >> word;
+        }
+        else if (isMathSign(word[0]) || word == "(" || word == ")" || word == "&" || word == "|" || word == "!")
+        {
+            statement += word;
+            ss >> word;
+        }
+        else if (word == "[")
+        {
+            ss >> word;
+
+            while (word != "]")
+                ss >> word;
+
+            ss >> word;
+        }
+        else
+        {
+            ss >> word;
+            
+            if (word == ":") // a label definition is found
+                statement += "_l_()";
+            else
+                statement += "_v_";
+        }
     }
 
-    /*if (word == ";")
-        statement += ";";*/
+    if (!isConditionOrLoop && word == ";")
+        statement += word;
 
     return statement;
 }
@@ -351,8 +440,6 @@ void processConditions(std::stringstream &ss, std::string &word, std::string &fi
 
             ss >> word;
             finalCode += "_c_(" + processStatement(ss, word, true);
-
-            //ss >> word;
         }
     }
 }
@@ -386,18 +473,44 @@ void processLoops(std::stringstream &ss, std::string &word, std::string &finalCo
     }
 }
 
+void processTypedefs(std::stringstream &ss, std::string &word)
+{
+    ss >> word;
+
+    if (word == "struct") // struct declaration
+    {
+        while (word != "}")
+            ss >> word;
+
+        ss >> word;
+        dataTypes.insert(word);
+        ss >> word;
+    }
+    else // a type name abbreviation, like "typedef unsigned long int uli;"
+    {
+        std::string prev;
+
+        while (word != ";")
+        {
+            prev = word;
+            ss >> word;
+        }
+
+        dataTypes.insert(prev);
+    }
+
+    ss >> word;
+}
+
 void initializeSets()
 {
-    dataTypes = {"bool", "char", "signed", "unsigned", "short", "int", "long", "void", "FILE"};
+    dataTypes = {"bool", "char", "signed", "unsigned", "short", "int", "long", "void", "FILE", "struct"};
 
-    ignorable = {"include", "define", "struct", "const", "static", "break", "continue", "{", "}"};
+    ignorable = {"const", "static", "break", "continue", "{", "}"};
 
     conditions = {"if", "else", "switch", "case", "default"};
 
     loops = {"for", "while", "do"};
-
-    keywords = {"if", "else", "switch", "case", "for", "while", "do", "break", "continue", "goto", 
-                "inline", "extern", "true", "false", "struct", "typedef", "include", "define", "return"};
 
     functions = {"assert", "isalnum", "isalpha", "iscntrl", "isdigit", "isgraph", "islower", "isprint",
                  "ispunct", "isspace", "isupper", "isxdigit", "tolower", "toupper", "errno", "localeconv",
