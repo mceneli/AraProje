@@ -1,61 +1,41 @@
 #  include     <stdio.h>
-
-struct Shape
-{
-    int w, h;
-};
+#include <stdlib.h>
 
 typedef struct
 {
     int age;
-    char *name;
-} Person;
-
-typedef long long int lli;
+    int salary;
+} Job;
 
 int main()
 {
-    struct Shape sh = {1, 2};// = 5;
-    Person person = {15, "Osman"};
-    int x, y;
-    //x = 1, y = 1;
+    Job *job = (Job *)malloc(sizeof(Job)*abs(abs(5)), abs(4), 4+7, 2*abs(4));
 
-    lli z = 10;
+    job->age = 1500;
+
+    int a, b, c = 30;
+    a = 10;
+    b = 40;
+
+    int A[5][3];
+
+    A[A[0][0]][A[0][0]] = 5;
+
+    printf("%d\n", a*b+c);
+
     int x;
-    label:
-    x = 5 + abs(-3, 4), y = 1;
-    x = 2*x;
-    goto label;
-    //#define x 5
 
-    int A[5] = {5};
-    int y = A[0] + 5;
+    if (x == 0)
+        printf("zero");
+    else if (x == 1)
+        printf("one");
+    else
+        printf("two");
 
-    switch (abs(5))
-    {
-        case 1:
-            x++;
-            break;
+    int i;
 
-        case 2:
-            x++;
-            break;
-    
-        default:
-            break;
-    }
-
-    if (x != 0)
-        x = x+1;
-
-    for (int i = 0; i < 10; ++i)
-        while (i--)
-            if (i > 0)
-                printf("");
-
-    do
-        ++x;
-    while (x > 0);
+    for (i = 0; i < 10; ++i)
+        printf("%d\n", i);
     
     return 0;
 }
