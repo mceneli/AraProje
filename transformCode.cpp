@@ -1,5 +1,26 @@
 // compilation: g++ transformCode.cpp -lstdc++fs
-// resmen compiler yazıyoruz aq
+
+/*
+    MOSS Algoritmasının Uygulaması:
+
+    1. Kodun iskeletinin çıkarılması:
+        - Yorumlar temizlenir.
+        - Fazla boşluklar temizlenir.
+        - String içleri temizlenir.
+        - Kod dönüşümü yapılır.
+    2. Winnowing algoritmasınun uygulanması:
+        - Parmak izleri oluşturulur.
+        - Karp-Rabin algoritması ile hash'leme yapılır.
+        - Winnowing algoritması ile parmak izleri seçilir.
+    3. Parmak izlerinin karşılaştırmaları.
+*/
+
+/*
+    x = y+5 -> _v_ = _v_+_v_
+    for (...), while (...) -> _l_()
+    if (...), else if (...), else (...), switch-case: _c_
+    func(x, y) -> _f_(_p_, _p_)
+*/
 
 /*
     Yapılacaklar Listesi:
@@ -13,18 +34,18 @@
     + goto, label
     + struct'lar
     + typedef'ler
+    + struct erişimleri: ".", "->"
 
     - virgüller
-    - struct erişimleri: ".", "->"
-    - define'lar
+    - define'lar (define, undef, ifdef) ??? GEREK VAR MI ???
     - fonksiyon çağrılarının işlemesini değiştir
 */
 
 #include <iostream>
 #include <algorithm>
-#include <vector>
 #include <fstream>
 #include <sstream>
+#include <vector>
 #include <map>
 #include <set>
 #include <experimental/filesystem>
@@ -34,12 +55,11 @@ std::set <std::string> dataTypes, functions, conditions, loops, ignorable;
 std::string removeComments(const std::string &path);
 std::string removeSpaces(const std::string &path);
 void removeQuotes(std::string &code);
-std::string transformCode(int k, const std::string &code);
+std::string transformCode(const std::string &code);
 void initializeSets();
 int main()
 {
     std::string path = "Codes";
-    int k = 5; // length of k-grams
 
     initializeSets();
 
@@ -48,11 +68,12 @@ int main()
     for (const auto &code: std::experimental::filesystem::directory_iterator(path))
     {
         std::string path = code.path();
+        std::cout << path << ":" << "\n";
         std::string fullCode = removeComments(path);
         fullCode = removeSpaces(fullCode);
         removeQuotes(fullCode);
         std::cout << fullCode << "\n\n";
-        std::string finalCode = transformCode(k, fullCode);
+        std::string finalCode = transformCode(fullCode);
         std::cout << finalCode << "\n\n";
     }
 
@@ -84,19 +105,19 @@ std::string removeSpaces(const std::string &fullCode)
 
     while (getline(ss, line))
         if (!skipLine(line))
-            newCode += formatLine(line);          
+            newCode += formatLine(line);
 
-    std::unique_copy(newCode.begin(), newCode.end(), std::back_insert_iterator <std::string> (result), 
+    std::unique_copy(newCode.begin(), newCode.end(), std::back_insert_iterator <std::string> (result),
                      [] (char a, char b) { return isspace(a) && isspace(b);});
 
     return result;
 }
 
-bool skipLine(const std::string &line) 
+bool skipLine(const std::string &line)
 {
     if (line.size() == 0)
         return true;
-        
+
     int j = 0;
 
     while (j < line.size() && line[j] == ' ')
@@ -166,7 +187,7 @@ void processFunctionDeclarations(std::stringstream &ss, std::string &funcName, s
 void processConditions(std::stringstream &ss, std::string &word, std::string &finalCode);
 void processLoops(std::stringstream &ss, std::string &word, std::string &finalCode);
 void processTypedefs(std::stringstream &ss, std::string &word);
-std::string transformCode(int k, const std::string &code)
+std::string transformCode(const std::string &code)
 {
     std::stringstream ss(code);
     std::string finalCode, word;
@@ -228,12 +249,12 @@ void processDeclarations(std::stringstream &ss, std::string &word, std::string &
     {
         // we ignore the additional data types, like long int x, const static signed long x...
         // also if there is a pointer or a reference, ignore it
-        if (ignorable.find(name) != ignorable.end() || dataTypes.find(name) != dataTypes.end() || name[0] == '*' || name[0] == '&') 
+        if (ignorable.find(name) != ignorable.end() || dataTypes.find(name) != dataTypes.end() || name[0] == '*' || name[0] == '&')
             ss >> name;
 
         ss >> word; // getting the punctuation after the name
 
-        // if the following punctuation is a comma or a equals sign, 
+        // if the following punctuation is a comma or a equals sign,
         // it means that we found a variable assignment
         if (word == "," || word == "=" || word == "[")
             processVariableDeclarations(ss, word, finalCode);
@@ -339,24 +360,33 @@ std::string processStatement(std::stringstream &ss, std::string &word, bool isCo
             statement += processFunctionCall(ss);
             ss >> word;
         }
-        else if (isMathSign(word[0]) || word == "(" || word == ")" || word == "&" || word == "|" || word == "!")
+        else if (isMathSign(word[0]) || word == "(" || word == ")" || word == "&" || word == "|" || word == "!" || word == "." || word == "->")
         {
             statement += word;
             ss >> word;
         }
         else if (word == "[")
         {
-            ss >> word;
+            int numOfOpenParantheses = 1;
 
-            while (word != "]")
+            while (numOfOpenParantheses > 0)
+            {
                 ss >> word;
+
+                if (word == "[")
+                    ++numOfOpenParantheses;
+                else if (word == "]")
+                    --numOfOpenParantheses;
+
+                std::cout << numOfOpenParantheses << std::endl;
+            }
 
             ss >> word;
         }
         else
         {
             ss >> word;
-            
+
             if (word == ":") // a label definition is found
                 statement += "_l_()";
             else
@@ -382,7 +412,24 @@ std::string processFunctionCall(std::stringstream &ss)
         ss >> word;
 
         while (word != ")" && word != ",")
+        {
+            if (word == "(")
+            {
+                int numOfOpenParantheses = 1;
+
+                while (numOfOpenParantheses > 0)
+                {
+                    ss >> word;
+                    
+                    if (word == "(")
+                        ++numOfOpenParantheses;
+                    else if (word == ")")
+                        --numOfOpenParantheses;
+                }
+            }
+            
             ss >> word;
+        }
 
         if (word == ",")
             equation += ",";
@@ -429,7 +476,7 @@ void processConditions(std::stringstream &ss, std::string &word, std::string &fi
     {
         bool isElse = (word == "else");
         ss >> word;
-            
+
         if (isElse && word != "if")
             finalCode += "_c_()";
         else
@@ -526,5 +573,5 @@ void initializeSets()
                  "wcstombs", "wctomb", "memchr", "memcmp", "memcpy", "memmove", "memset", "strcat", "strchr",
                  "strcmp",", ""strcoll", "strcpy", "strcspn", "strerror", "strlen", "strncat", "strncmp",
                  "strncpy", "strpbrk", "strrchr", "strspn", "strstr", "strtok", "strxfrm", "asctime",
-                 "clock", "ctime", "difftime", "gmtime", "localtime", "mktime", "strftime", "time"};
+                 "clock", "ctime", "difftime", "gmtime", "localtime", "mktime", "strftime", "time", "sizeof"};
 }
