@@ -23,22 +23,26 @@
 */
 
 /*
-    Yapılacaklar Listesi:
+    Tamamlananlar:
     + değişken tanımlamaları
     + fonksiyon tanımlamaları
     + koşullu ifadeler
     + döngüler
     + işlemler
     + noktalı virgüller
+    + virgüller
     + diziler: A[]
     + goto, label
     + struct'lar
     + typedef'ler
     + struct erişimleri: ".", "->"
 
-    - virgüller
-    - define'lar (define, undef, ifdef) ??? GEREK VAR MI ???
-    - fonksiyon çağrılarının işlemesini değiştir
+    Eksiklikler:
+    - define ile oluşturulan macro'lar
+    - define ile tip atamaları (örn: #define int sayi) 
+    - undef, ifdef vs...
+    - Ternary operatörü (örn: return x > 0 ? true : false)
+    - C'nin standart olmayan kütüphanelerinin fonksiyonları
 */
 
 #include <iostream>
@@ -46,7 +50,6 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <map>
 #include <set>
 #include <experimental/filesystem>
 
@@ -179,11 +182,9 @@ void removeQuotes(std::string &code)
     }
 }
 
-std::string processStatement(std::stringstream &ss, std::string &word, bool isConditionOrLoop);
+std::string processStatement(std::stringstream &ss, std::string &word, std::string &finalCode, bool isConditionOrLoop);
 std::string processFunctionCall(std::stringstream &ss);
 void processDeclarations(std::stringstream &ss, std::string &word, std::string &finalCode);
-void processVariableDeclarations(std::stringstream &ss, std::string &punct, std::string &finalCode);
-void processFunctionDeclarations(std::stringstream &ss, std::string &funcName, std::string &finalCode);
 void processConditions(std::stringstream &ss, std::string &word, std::string &finalCode);
 void processLoops(std::stringstream &ss, std::string &word, std::string &finalCode);
 void processTypedefs(std::stringstream &ss, std::string &word);
@@ -224,7 +225,7 @@ std::string transformCode(const std::string &code)
         }
         else
         {
-            finalCode += processStatement(ss, word, false);
+            finalCode += processStatement(ss, word, finalCode, false);
             ss >> word;
         }
     }
@@ -232,6 +233,8 @@ std::string transformCode(const std::string &code)
     return finalCode;
 }
 
+void processVariableDeclarations(std::stringstream &ss, std::string &punct, std::string &finalCode);
+void processFunctionDeclarations(std::stringstream &ss, std::string &funcName);
 void processDeclarations(std::stringstream &ss, std::string &word, std::string &finalCode)
 {
     // a data type dedected, it may specify a variable or a function decleration
@@ -247,8 +250,8 @@ void processDeclarations(std::stringstream &ss, std::string &word, std::string &
             ss >> word;
     else
     {
-        // we ignore the additional data types, like long int x, const static signed long x...
-        // also if there is a pointer or a reference, ignore it
+        // we ignore additional part of data types, like "long" int x, "const static signed" long x...
+        // also if there is a pointer or a reference, we ignore it
         if (ignorable.find(name) != ignorable.end() || dataTypes.find(name) != dataTypes.end() || name[0] == '*' || name[0] == '&')
             ss >> name;
 
@@ -259,7 +262,7 @@ void processDeclarations(std::stringstream &ss, std::string &word, std::string &
         if (word == "," || word == "=" || word == "[")
             processVariableDeclarations(ss, word, finalCode);
         else if (word == "(") //  a function decleration
-            processFunctionDeclarations(ss, name, finalCode);
+            processFunctionDeclarations(ss, name);
     }
 
     ss >> word;
@@ -295,7 +298,9 @@ void processVariableDeclarations(std::stringstream &ss, std::string &word, std::
     {
         if (word == ",")
         {
-            finalCode += ',';
+            if (finalCode.back() == '_' || finalCode.back() == ')')
+                finalCode += ',';
+
             ss >> word; // getting the next variable
 
             if (word[0] == '*' || word[0] == '&') // if there is a pointer or a reference, ignore it
@@ -326,7 +331,7 @@ void processVariableDeclarations(std::stringstream &ss, std::string &word, std::
                 ss >> word;
             }
             else
-                finalCode += "_v_=" + processStatement(ss, word, false);
+                finalCode += "_v_=" + processStatement(ss, word, finalCode, false);
         }
         else if (word == "[")
         {
@@ -340,7 +345,22 @@ void processVariableDeclarations(std::stringstream &ss, std::string &word, std::
     }
 }
 
-std::string processStatement(std::stringstream &ss, std::string &word, bool isConditionOrLoop)
+void processFunctionDeclarations(std::stringstream &ss, std::string &funcName)
+{
+    std::string word;
+    ss >> word;
+
+    while (word != ")")
+        ss >> word;
+
+    if (functions.find(funcName) == functions.end())
+        functions.insert(funcName);
+
+    if (word == ";")
+        ss >> word;
+}
+
+std::string processStatement(std::stringstream &ss, std::string &word, std::string &finalCode, bool isConditionOrLoop)
 {
     std::string statement;
     int numOfOpenParantheses = 1;
@@ -377,8 +397,6 @@ std::string processStatement(std::stringstream &ss, std::string &word, bool isCo
                     ++numOfOpenParantheses;
                 else if (word == "]")
                     --numOfOpenParantheses;
-
-                std::cout << numOfOpenParantheses << std::endl;
             }
 
             ss >> word;
@@ -394,8 +412,8 @@ std::string processStatement(std::stringstream &ss, std::string &word, bool isCo
         }
     }
 
-    if (!isConditionOrLoop && word == ";")
-        statement += word;
+    if (word == ";" && !isConditionOrLoop && statement.size() > 0 && (statement.back() == '_' || statement.back() == ')'))
+        statement += ";";
 
     return statement;
 }
@@ -438,25 +456,13 @@ std::string processFunctionCall(std::stringstream &ss)
     return equation + ")";
 }
 
-void processFunctionDeclarations(std::stringstream &ss, std::string &funcName, std::string &finalCode)
-{
-    std::string word;
-    ss >> word;
-
-    while (word != ")")
-        ss >> word;
-
-    if (functions.find(funcName) == functions.end())
-        functions.insert(funcName);
-}
-
 void processConditions(std::stringstream &ss, std::string &word, std::string &finalCode)
 {
     if (word == "switch")
     {
         ss >> word;
         ss >> word;
-        processStatement(ss, word, true);
+        processStatement(ss, word, finalCode, true);
         ss >> word;
     }
     else if (word == "case")
@@ -485,7 +491,7 @@ void processConditions(std::stringstream &ss, std::string &word, std::string &fi
                 ss >> word; // getting '(' character
 
             ss >> word;
-            finalCode += "_c_(" + processStatement(ss, word, true);
+            finalCode += "_c_(" + processStatement(ss, word, finalCode, true);
         }
     }
 }
@@ -501,16 +507,16 @@ void processLoops(std::stringstream &ss, std::string &word, std::string &finalCo
 
         ss >> word;
 
-        finalCode += "_l_(" + processStatement(ss, word, true) + ")";
+        finalCode += "_l_(" + processStatement(ss, word, finalCode, true) + ")";
 
         ss >> word;
-        processStatement(ss, word, true);
+        processStatement(ss, word, finalCode, true);
     }
     else if (word == "while")
     {
         ss >> word;
         ss >> word;
-        finalCode += "_l_(" + processStatement(ss, word, true);
+        finalCode += "_l_(" + processStatement(ss, word, finalCode, true);
     }
     else // do while
     {
