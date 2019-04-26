@@ -1,4 +1,4 @@
-// compilation: g++ transformCode.cpp -lstdc++fs
+// compilation: g++ winnowing.cpp -lstdc++fs
 
 /*
     MOSS Algoritmasının Uygulaması:
@@ -66,19 +66,15 @@ std::vector <Code> getCodes(std::string &path, int k);
 int compareCodes(Code *code1, Code *code2);
 int main()
 {
-    std::string path = "Codes";
+    std::string path = "dataset";
 
     initializeSets();
 
-    system("mkdir -p Transformed/Codes");
-
-    int k = 25;
+    int k = 10;
     std::vector <Code> codes = getCodes(path, k);
 
     for (Code &code: codes)
         std::cout << code.fileName << ":\n" << code.skeleton << "\n\n" << std::endl;
-
-
 
     for (int i = 0; i < codes.size()-1; ++i)
     {
