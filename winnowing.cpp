@@ -1,77 +1,38 @@
 // compilation: g++ winnowing.cpp -lstdc++fs
 
-/*
-    MOSS Algoritmasının Uygulaması:
-
-    1. Kodun iskeletinin çıkarılması:
-        - Yorumlar temizlenir.
-        - Fazla boşluklar temizlenir.
-        - String içleri temizlenir.
-        - Kod dönüşümü yapılır.
-    2. Winnowing algoritmasının uygulanması:
-        - Parmak izleri oluşturulur.
-        - Karp-Rabin algoritması ile hash'leme yapılır.
-        - Winnowing algoritması ile parmak izleri seçilir.
-    3. Parmak izlerinin karşılaştırmaları.
-*/
-
-/*
-    x = y+5 -> _v_=_v_+_v_
-    for (...), while (...) -> _l_()
-    if (...), else if (...), else (...), switch-case: _c_()
-    func(x, y) -> _f_(_p_,_p_)
-*/
-
-/*
-    Tamamlananlar:
-    + değişken tanımlamaları
-    + fonksiyon tanımlamaları
-    + koşullu ifadeler
-    + döngüler
-    + işlemler
-    + noktalı virgüller
-    + virgüller
-    + diziler: A[]
-    + goto, label
-    + struct'lar
-    + typedef'ler
-    + struct erişimleri: ".", "->"
-
-    Eksiklikler:
-    - define ile oluşturulan macro'lar
-    - define ile tip atamaları (örn: #define int sayi) 
-    - undef, ifdef vs...
-    - Ternary operatörü (örn: return x > 0 ? true : false)
-    - C'nin standart olmayan kütüphanelerinin fonksiyonları
-*/
-
 #include <iostream>
 #include <algorithm>
 #include <fstream>
-#include <sstream>
 #include <vector>
-#include <map>
-#include <set>
+#include <unordered_map>
+#include <chrono>
 #include <experimental/filesystem>
 
 #include "transformCode.hpp"
+#include "hashing.hpp"
 
 struct Code
 {
     std::string skeleton, fileName;
-    std::map <std::string, int> fingerprints;
+    std::unordered_map <int, int> fingerprints;
+    int numOfSelectedFingerPrints = 0;
 };
 
-std::vector <Code> getCodes(std::string &path, int k);
-int compareCodes(Code *code1, Code *code2);
+std::vector <Code> getCodes(std::string &path, int k, int w);
+int compareCodes(Code &code1, Code &code2);
 int main()
 {
+    using clock = std::chrono::system_clock;
+    using ms = std::chrono::milliseconds;
+
+    const auto before = clock::now();
+
     std::string path = "dataset";
 
     initializeSets();
 
-    int k = 10;
-    std::vector <Code> codes = getCodes(path, k);
+    int k = 20, w = 5;
+    std::vector <Code> codes = getCodes(path, k, w);
 
     for (Code &code: codes)
         std::cout << code.fileName << ":\n" << code.skeleton << "\n\n" << std::endl;
@@ -80,20 +41,25 @@ int main()
     {
         for (int j = i+1; j < codes.size(); ++j)
         {
-            double diff = compareCodes(&codes[i], &codes[j]);
-            int rate1 = 100 * diff / (codes[i].skeleton.size() - k + 1);
-            int rate2 = 100 * diff / (codes[j].skeleton.size() - k + 1);
+            double sameFingerprints = compareCodes(codes[i], codes[j]);
+            std::cout << sameFingerprints << " " << codes[i].numOfSelectedFingerPrints << " " << codes[j].numOfSelectedFingerPrints << std::endl;
+            int rate1 = 100 * sameFingerprints / (codes[i].numOfSelectedFingerPrints);
+            int rate2 = 100 * sameFingerprints / (codes[j].numOfSelectedFingerPrints);
             std::cout << "similarity of " << codes[i].fileName << " to " << codes[j].fileName << ": " << rate1 << "\n";
             std::cout << "similarity of " << codes[j].fileName << " to " << codes[i].fileName << ": " << rate2 << "\n\n";
         }
     }
 
+    const auto duration = std::chrono::duration_cast<ms>(clock::now() - before);
+
+    std::cout << "It took " << duration.count()/1000.0 << "ms" << std::endl;
+
     return 0;
 }
 
-std::string getCodeSkeleton(const std::string &path);
-std::map <std::string, int> getFingerprints(const std::string &codeSkeleton, int k);
-std::vector <Code> getCodes(std::string &path, int k)
+void getCodeSkeleton(Code &code);
+void getFingerprints(Code &code, int k, int w);
+std::vector <Code> getCodes(std::string &path, int k, int w)
 {
     std::vector <Code> codes;
 
@@ -101,41 +67,57 @@ std::vector <Code> getCodes(std::string &path, int k)
     {
         Code *code = new Code;
         code->fileName = codeFile.path();
-        code->skeleton = getCodeSkeleton(code->fileName);
-        code->fingerprints = getFingerprints(code->skeleton, k);
+        getCodeSkeleton(*code);
+        getFingerprints(*code, k, w);
         codes.push_back(*code);
     }
 
     return codes;
 }
 
-std::string getCodeSkeleton(const std::string &path)
+void getCodeSkeleton(Code &code)
 {
-    std::string fullCode = removeComments(path);
+    std::string fullCode = removeComments(code.fileName);
     fullCode = removeSpaces(fullCode);
     removeQuotes(fullCode);
-    return transformCode(fullCode);
+    code.skeleton = transformCode(fullCode);
 }
 
-std::map <std::string, int> getFingerprints(const std::string &codeSkeleton, int k)
+void getFingerprints(Code &code, int k, int w)
 {
-    std::map <std::string, int> fingerprints;
+    // Applying Karp-Rabin algorithm:
+    long long factor = getFactor(k);
+    std::vector <long long> hashKeys = karpRabinHashing(code.skeleton, k, factor);
 
-    for (int i = 0; i <= codeSkeleton.size() - k; ++i)
-        ++fingerprints[codeSkeleton.substr(i, k)];
-    
-    return fingerprints;
+    // Applying Winnowing algorithm:
+    int min = -1; // index of minimum hash
+
+    for (int i = 0; i < hashKeys.size()-w+1; ++i)
+    {
+        if (min < i) // the previous minimum hash key is no longer in the window
+        {
+            min = std::min_element(hashKeys.begin()+i, hashKeys.begin()+i+w) - hashKeys.begin();
+            ++code.fingerprints[hashKeys[min]];
+            ++code.numOfSelectedFingerPrints;
+        }
+        else if (hashKeys[i+w-1] <= hashKeys[min]) // the previous minimum hash key is still in the window
+        {
+            min = i+w-1;
+            ++code.fingerprints[hashKeys[min]];
+            ++code.numOfSelectedFingerPrints;
+        }
+    }
 }
 
-int compareCodes(Code *code1, Code *code2)
+int compareCodes(Code &code1, Code &code2)
 {
     int tokens_matched = 0;
 
-    for (const auto &p1: code1->fingerprints)
+    for (const auto &p1: code1.fingerprints)
     {
-        auto p2 = code2->fingerprints.find(p1.first);
+        auto p2 = code2.fingerprints.find(p1.first);
 
-        if (p2 != code2->fingerprints.end())
+        if (p2 != code2.fingerprints.end())
             tokens_matched += std::min(p1.second, p2->second);
     }
 
