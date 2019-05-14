@@ -1,12 +1,4 @@
-#ifndef HASHING_HPP
-#define HASHING_HPP
-
-#include <iostream>
-#include <string>
-#include <vector>
-
-const unsigned PRIME_BASE = 257;
-const unsigned PRIME_MOD = 1e9+7;
+#include "hashing.h"
 
 long long getFactor(int k)
 {
@@ -44,5 +36,3 @@ std::vector <long long> karpRabinHashing(const std::string &str, int k, long lon
 
     return hashKeys;
 }
-
-#endif

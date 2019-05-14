@@ -1,74 +1,20 @@
-// compilation: g++ winnowing.cpp -lstdc++fs
+#include "winnowing.h"
 
-#include <iostream>
-#include <algorithm>
-#include <fstream>
-#include <vector>
-#include <unordered_map>
-#include <chrono>
-#include <experimental/filesystem>
-
-#include "transformCode.hpp"
-#include "hashing.hpp"
-
-struct Code
-{
-    std::string skeleton, fileName;
-    std::unordered_map <int, int> fingerprints;
-    int numOfSelectedFingerPrints = 0;
-};
-
-std::vector <Code> getCodes(std::string &path, int k, int w);
-int compareCodes(Code &code1, Code &code2);
-int main()
-{
-    using clock = std::chrono::system_clock;
-    using ms = std::chrono::milliseconds;
-
-    const auto before = clock::now();
-
-    std::string path = "dataset";
-
-    initializeSets();
-
-    int k = 20, w = 5;
-    std::vector <Code> codes = getCodes(path, k, w);
-
-    for (Code &code: codes)
-        std::cout << code.fileName << ":\n" << code.skeleton << "\n\n" << std::endl;
-
-    for (int i = 0; i < codes.size()-1; ++i)
-    {
-        for (int j = i+1; j < codes.size(); ++j)
-        {
-            double sameFingerprints = compareCodes(codes[i], codes[j]);
-            std::cout << sameFingerprints << " " << codes[i].numOfSelectedFingerPrints << " " << codes[j].numOfSelectedFingerPrints << std::endl;
-            int rate1 = 100 * sameFingerprints / (codes[i].numOfSelectedFingerPrints);
-            int rate2 = 100 * sameFingerprints / (codes[j].numOfSelectedFingerPrints);
-            std::cout << "similarity of " << codes[i].fileName << " to " << codes[j].fileName << ": " << rate1 << "\n";
-            std::cout << "similarity of " << codes[j].fileName << " to " << codes[i].fileName << ": " << rate2 << "\n\n";
-        }
-    }
-
-    const auto duration = std::chrono::duration_cast<ms>(clock::now() - before);
-
-    std::cout << "It took " << duration.count()/1000.0 << "ms" << std::endl;
-
-    return 0;
-}
-
-void getCodeSkeleton(Code &code);
-void getFingerprints(Code &code, int k, int w);
-std::vector <Code> getCodes(std::string &path, int k, int w)
+std::vector <Code> getCodes(std::vector <std::string> codeFiles, int k, int w)
 {
     std::vector <Code> codes;
 
-    for (const auto &codeFile: std::experimental::filesystem::directory_iterator(path))
+    for (const auto &codeFile: codeFiles)
     {
+        initializeSets();
         Code *code = new Code;
-        code->fileName = codeFile.path();
+        code->filePath = codeFile;
+        qDebug() << codeFile.c_str();
         getCodeSkeleton(*code);
+        qDebug() << "getCodeSkeleton";
         getFingerprints(*code, k, w);
+        qDebug() << "getFingerprints";
+        setFileName(*code);
         codes.push_back(*code);
     }
 
@@ -77,9 +23,10 @@ std::vector <Code> getCodes(std::string &path, int k, int w)
 
 void getCodeSkeleton(Code &code)
 {
-    std::string fullCode = removeComments(code.fileName);
+    std::string fullCode = removeComments(code.filePath);
     fullCode = removeSpaces(fullCode);
     removeQuotes(fullCode);
+    code.pureCode = fullCode;
     code.skeleton = transformCode(fullCode);
 }
 
@@ -122,4 +69,12 @@ int compareCodes(Code &code1, Code &code2)
     }
 
     return tokens_matched;
+}
+
+void setFileName(Code &code)
+{
+    auto index = code.filePath.find_last_of('/');
+
+    if (index != std::string::npos)
+        code.fileName = code.filePath.substr(index+1, code.filePath.size()-index-2);
 }
