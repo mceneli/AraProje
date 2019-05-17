@@ -31,6 +31,10 @@
   <property name="windowTitle">
    <string>Sonuçlar</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="files.qrc">
+    <normaloff>:/images/images/logo.ico</normaloff>:/images/images/logo.ico</iconset>
+  </property>
   <widget class="QTableWidget" name="tableCodes">
    <property name="geometry">
     <rect>
@@ -86,7 +90,7 @@
     <enum>QAbstractItemView::ScrollPerItem</enum>
    </property>
    <property name="gridStyle">
-    <enum>Qt::DashLine</enum>
+    <enum>Qt::DotLine</enum>
    </property>
    <property name="sortingEnabled">
     <bool>true</bool>
@@ -115,7 +119,7 @@
    <property name="styleSheet">
     <string notr="true">QLabel
 {
-	background: rgb(173, 127, 168);
+	background: rgb(245, 121, 0);
 	color: #FFF;
 }</string>
    </property>
@@ -127,6 +131,8 @@
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="files.qrc"/>
+ </resources>
  <connections/>
 </ui>

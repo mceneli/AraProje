@@ -41,7 +41,7 @@ bool skipLine(const std::string &line)
     if (line.size() == 0)
         return true;
 
-    int j = 0;
+    size_t j = 0;
 
     while (j < line.size() && line[j] == ' ')
         ++j;
@@ -52,7 +52,7 @@ bool skipLine(const std::string &line)
 std::string formatLine(const std::string &line)
 {
     std::string formattedLine;
-    int j = 0;
+    size_t j = 0;
 
     while (j < line.size())
     {

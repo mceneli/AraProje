@@ -97,7 +97,7 @@ bool isNumber(const std::string &str)
 
     int num_of_e = 0; // the number may be in form of 1e10, 1e15, 2e3...
 
-    for (int i = 0; i < str.size(); ++i)
+    for (size_t i = 0; i < str.size(); ++i)
         if (!isdigit(str[i]))
         {
             if (str[i] == 'e')

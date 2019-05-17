@@ -9,13 +9,14 @@ ResultWindow::ResultWindow(QWidget *parent) :
     ui->setupUi(this);
 }
 
-ResultWindow::ResultWindow(std::vector<std::string> codeFileList, int k, int w): ResultWindow()
+ResultWindow::ResultWindow(std::vector<std::string> &codeFileList, std::string &docType, int k, int w): ResultWindow()
 {
     this->codeFileList = codeFileList;
+    this->docType = docType;
     this->k = k;
     this->w = w;
 
-    codes = getCodes(codeFileList, k, w);
+    codes = docType == "C" ? getCodes(codeFileList, k, w) : getDocs(codeFileList, k, w);
     std::vector <CodePair> similarities = calculateSimilarities(codes);
     std::sort(similarities.begin(), similarities.end(),
               [] (const CodePair &lhs, const CodePair &rhs) { return lhs.sim1 > rhs.sim1; });
@@ -58,7 +59,7 @@ void ResultWindow::fillTable(std::vector <Code> &codes, std::vector <CodePair> &
     tableItem->setTextAlignment(Qt::AlignCenter);
     tableItem->setFlags(tableItem->flags() & ~Qt::ItemIsEditable & ~Qt::ItemIsSelectable);
 
-    for (int i = 0; i < similarities.size(); ++i)
+    for (size_t i = 0; i < similarities.size(); ++i)
     {
         ui->tableCodes->insertRow(ui->tableCodes->rowCount());
 
@@ -110,10 +111,15 @@ std::vector <CodePair> ResultWindow::calculateSimilarities(std::vector<Code> &co
         for (size_t j = i+1; j < codes.size(); ++j)
         {
             int sameFingerprints = compareCodes(codes[i], codes[j]);
-            int less = std::max(codes[i].numOfSelectedFingerPrints, codes[j].numOfSelectedFingerPrints);
-            int bigger = std::min(codes[i].numOfSelectedFingerPrints, codes[j].numOfSelectedFingerPrints);
-            similarities.emplace_back(i, j, sameFingerprints, 100 * sameFingerprints / bigger,
-                                      100 * sameFingerprints / less);
+            size_t less, bigger;
+
+            if (codes[i].numOfSelectedFingerPrints < codes[j].numOfSelectedFingerPrints)
+                less = j, bigger = i;
+            else
+                less = i, bigger = j;
+
+            similarities.emplace_back(bigger, less, sameFingerprints, 100 * sameFingerprints / codes[bigger].numOfSelectedFingerPrints,
+                                      100 * sameFingerprints / codes[less].numOfSelectedFingerPrints);
         }
     }
 
@@ -128,6 +134,6 @@ void ResultWindow::on_tableCodes_cellDoubleClicked(int row, int column)
     int sim1 = std::stoi(ui->tableCodes->item(row, 2)->text().toStdString().substr(1));
     int sim2 = std::stoi(ui->tableCodes->item(row, 4)->text().toStdString().substr(1));
 
-    DetailWindow *window = new DetailWindow(codes[x], codes[y], matchedFP, sim1, sim2, k);
+    DetailWindow *window = new DetailWindow(codes[x], codes[y], docType, matchedFP, sim1, sim2, k);
     window->show();
 }

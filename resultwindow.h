@@ -23,7 +23,7 @@ class ResultWindow : public QWidget
 public:
     explicit ResultWindow(QWidget *parent = nullptr);
 
-    explicit ResultWindow(std::vector <std::string> codeFileList, int k, int w);
+    explicit ResultWindow(std::vector <std::string> &codeFileList, std::string &docType, int k, int w);
 
     ~ResultWindow();
 
@@ -38,6 +38,7 @@ private:
 
     std::vector <Code> codes;
     std::vector <std::string> codeFileList;
+    std::string docType;
     int k, w;
 };
 

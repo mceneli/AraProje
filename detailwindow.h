@@ -15,7 +15,7 @@ class DetailWindow : public QWidget
 public:
     explicit DetailWindow(QWidget *parent = nullptr);
 
-    explicit DetailWindow(const Code &code1, const Code &code2, int matchedFP, int sim1, int sim2, int k);
+    explicit DetailWindow(const Code &code1, const Code &code2, std::string &docType, int matchedFP, int sim1, int sim2, int k);
 
     ~DetailWindow();
 
@@ -28,8 +28,10 @@ private slots:
 private:
     Ui::DetailWindow *ui;
     void fillDetails();
+    QString colorizeSkeleton(std::string &skeleton);
 
     Code code1, code2;
+    std::string docType;
     int matchedFP, sim1, sim2, k;
 };
 

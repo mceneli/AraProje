@@ -1,16 +1,10 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QFileDialog>
-#include <QIntValidator>
-#include <QtDebug>
-#include <QString>
-#include <QStringList>
-
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <QMainWindow>
 
 namespace Ui {
 class MainWindow;
@@ -50,7 +44,7 @@ private:
     void initializeExtensions();
 
     std::vector <std::string> codeFileList;
-    std::unordered_map <std::string, QStringList> extensions;
+    std::unordered_map <std::string, std::vector QStringList> extensions;
     std::string currExtension;
     int k, w;
 };

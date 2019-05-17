@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>550</width>
-    <height>600</height>
+    <height>650</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -16,15 +16,31 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>550</width>
+    <height>650</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>550</width>
+    <height>650</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>Kod Dedektifi</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="files.qrc">
+    <normaloff>:/images/images/logo.ico</normaloff>:/images/images/logo.ico</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QLabel" name="label_k">
     <property name="geometry">
      <rect>
-      <x>190</x>
-      <y>110</y>
+      <x>170</x>
+      <y>150</y>
       <width>155</width>
       <height>26</height>
      </rect>
@@ -33,14 +49,14 @@
      <string notr="true"/>
     </property>
     <property name="text">
-     <string>Parmak izi  boyutu (k):</string>
+     <string>Parmak izi boyutu:</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="text_k">
     <property name="geometry">
      <rect>
       <x>490</x>
-      <y>110</y>
+      <y>150</y>
       <width>41</width>
       <height>31</height>
      </rect>
@@ -56,7 +72,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>220</y>
+      <y>260</y>
       <width>511</width>
       <height>261</height>
      </rect>
@@ -72,17 +88,20 @@
    <widget class="QPushButton" name="pushDir">
     <property name="geometry">
      <rect>
-      <x>190</x>
-      <y>20</y>
-      <width>341</width>
+      <x>170</x>
+      <y>60</y>
+      <width>361</width>
       <height>30</height>
      </rect>
+    </property>
+    <property name="cursor">
+     <cursorShape>PointingHandCursor</cursorShape>
     </property>
     <property name="styleSheet">
      <string notr="true">QPushButton
 {
 	color: white;
-	background: #34495e;
+	background: rgb(245, 121, 0);
 }</string>
     </property>
     <property name="text">
@@ -93,9 +112,9 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>30</y>
+      <y>60</y>
       <width>141</width>
-      <height>20</height>
+      <height>30</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -109,16 +128,19 @@
     <property name="geometry">
      <rect>
       <x>180</x>
-      <y>500</y>
+      <y>540</y>
       <width>201</width>
       <height>51</height>
      </rect>
+    </property>
+    <property name="cursor">
+     <cursorShape>PointingHandCursor</cursorShape>
     </property>
     <property name="styleSheet">
      <string notr="true">QPushButton
 {
 	color: white;
-	background: #34495e;
+	background: rgb(245, 121, 0);
 }</string>
     </property>
     <property name="text">
@@ -129,7 +151,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>190</y>
+      <y>230</y>
       <width>141</width>
       <height>21</height>
      </rect>
@@ -145,7 +167,7 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>70</y>
+      <y>110</y>
       <width>141</width>
       <height>20</height>
      </rect>
@@ -160,10 +182,10 @@
    <widget class="QCheckBox" name="checkTweaks">
     <property name="geometry">
      <rect>
-      <x>190</x>
-      <y>70</y>
+      <x>170</x>
+      <y>110</y>
       <width>21</width>
-      <height>28</height>
+      <height>24</height>
      </rect>
     </property>
     <property name="text">
@@ -173,8 +195,8 @@
    <widget class="QLabel" name="label_6">
     <property name="geometry">
      <rect>
-      <x>240</x>
-      <y>70</y>
+      <x>210</x>
+      <y>110</y>
       <width>231</width>
       <height>20</height>
      </rect>
@@ -189,9 +211,9 @@
    <widget class="QSlider" name="slider_k">
     <property name="geometry">
      <rect>
-      <x>360</x>
-      <y>115</y>
-      <width>111</width>
+      <x>330</x>
+      <y>155</y>
+      <width>141</width>
       <height>21</height>
      </rect>
     </property>
@@ -199,13 +221,16 @@
      <number>5</number>
     </property>
     <property name="maximum">
-     <number>50</number>
+     <number>100</number>
+    </property>
+    <property name="singleStep">
+     <number>1</number>
     </property>
     <property name="pageStep">
      <number>5</number>
     </property>
     <property name="value">
-     <number>20</number>
+     <number>25</number>
     </property>
     <property name="orientation">
      <enum>Qt::Horizontal</enum>
@@ -214,9 +239,9 @@
    <widget class="QSlider" name="slider_w">
     <property name="geometry">
      <rect>
-      <x>360</x>
-      <y>155</y>
-      <width>111</width>
+      <x>330</x>
+      <y>195</y>
+      <width>141</width>
       <height>21</height>
      </rect>
     </property>
@@ -224,7 +249,10 @@
      <number>1</number>
     </property>
     <property name="maximum">
-     <number>15</number>
+     <number>30</number>
+    </property>
+    <property name="singleStep">
+     <number>1</number>
     </property>
     <property name="pageStep">
      <number>5</number>
@@ -239,8 +267,8 @@
    <widget class="QLabel" name="label_w">
     <property name="geometry">
      <rect>
-      <x>190</x>
-      <y>150</y>
+      <x>170</x>
+      <y>190</y>
       <width>155</width>
       <height>26</height>
      </rect>
@@ -249,14 +277,14 @@
      <string notr="true"/>
     </property>
     <property name="text">
-     <string>Pencere boyutu (w):</string>
+     <string>Pencere boyutu:</string>
     </property>
    </widget>
    <widget class="QLineEdit" name="text_w">
     <property name="geometry">
      <rect>
       <x>490</x>
-      <y>150</y>
+      <y>190</y>
       <width>41</width>
       <height>31</height>
      </rect>
@@ -268,37 +296,204 @@
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>20</y>
+      <width>141</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="text">
+     <string>Döküman Tipi:</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radio_Other">
+    <property name="geometry">
+     <rect>
+      <x>325</x>
+      <y>17</y>
+      <width>21</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radio_C">
+    <property name="geometry">
+     <rect>
+      <x>175</x>
+      <y>17</y>
+      <width>21</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="comboBox">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>410</x>
+      <y>20</y>
+      <width>121</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>11</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QComboBox
+{
+	padding: 0 5px;
+}</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>20</y>
+      <width>21</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>C</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_7">
+    <property name="geometry">
+     <rect>
+      <x>350</x>
+      <y>20</y>
+      <width>51</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Diğer:</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_8">
+    <property name="geometry">
+     <rect>
+      <x>270</x>
+      <y>20</y>
+      <width>31</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>TXT</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radio_TXT">
+    <property name="geometry">
+     <rect>
+      <x>245</x>
+      <y>17</y>
+      <width>21</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+   </widget>
   </widget>
-  <widget class="QMenuBar" name="menuBar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>550</width>
-     <height>27</height>
-    </rect>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
    </property>
-   <widget class="QMenu" name="menuDedektif">
-    <property name="title">
-     <string>Dedektif</string>
-    </property>
-   </widget>
-   <widget class="QMenu" name="menuRehber">
-    <property name="title">
-     <string>Rehber</string>
-    </property>
-   </widget>
-   <widget class="QMenu" name="menuHakk_nda">
-    <property name="title">
-     <string>Hakkında</string>
-    </property>
-   </widget>
-   <addaction name="menuDedektif"/>
-   <addaction name="menuRehber"/>
-   <addaction name="menuHakk_nda"/>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+   <property name="movable">
+    <bool>false</bool>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>20</width>
+     <height>20</height>
+    </size>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonTextBesideIcon</enum>
+   </property>
+   <property name="floatable">
+    <bool>true</bool>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionDedektif"/>
+   <addaction name="actionRehber"/>
+   <addaction name="actionHakk_nda"/>
   </widget>
+  <action name="actionDedektif">
+   <property name="icon">
+    <iconset resource="files.qrc">
+     <normaloff>:/images/images/dedective.png</normaloff>:/images/images/dedective.png</iconset>
+   </property>
+   <property name="text">
+    <string>Dedektif</string>
+   </property>
+   <property name="iconText">
+    <string>Dedektif</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionRehber">
+   <property name="icon">
+    <iconset resource="files.qrc">
+     <normaloff>:/images/images/help.png</normaloff>:/images/images/help.png</iconset>
+   </property>
+   <property name="text">
+    <string>Rehber</string>
+   </property>
+  </action>
+  <action name="actionHakk_nda">
+   <property name="icon">
+    <iconset>
+     <normalon>:/images/images/info.png</normalon>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Hakkında</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <resources/>
+ <resources>
+  <include location="files.qrc"/>
+ </resources>
  <connections/>
 </ui>

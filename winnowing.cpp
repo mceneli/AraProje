@@ -1,6 +1,6 @@
 #include "winnowing.h"
 
-std::vector <Code> getCodes(std::vector <std::string> codeFiles, int k, int w)
+std::vector <Code> getCodes(std::vector <std::string> &codeFiles, int k, int w)
 {
     std::vector <Code> codes;
 
@@ -12,13 +12,60 @@ std::vector <Code> getCodes(std::vector <std::string> codeFiles, int k, int w)
         qDebug() << codeFile.c_str();
         getCodeSkeleton(*code);
         qDebug() << "getCodeSkeleton";
-        getFingerprints(*code, k, w);
-        qDebug() << "getFingerprints";
-        setFileName(*code);
-        codes.push_back(*code);
+
+        if (code->skeleton.size() >= k)
+        {
+            getFingerprints(*code, k, w);
+            qDebug() << "getFingerprints";
+            setFileName(*code);
+            codes.push_back(*code);
+        }
     }
 
     return codes;
+}
+
+std::vector<Code> getDocs(std::vector<std::string> &docFiles, int k, int w)
+{
+    std::vector <Code> codes;
+
+    for (const auto &codeFile: docFiles)
+    {
+        Code *code = new Code;
+        code->filePath = codeFile;
+        qDebug() << code->filePath.c_str();
+        code->pureCode = code->skeleton = readFile(code->filePath);
+        qDebug() << "readFile";
+
+        if (code->skeleton.size() >= k)
+        {
+            getFingerprints(*code, k, w);
+            qDebug() << "getFingerprints";
+            setFileName(*code);
+            codes.push_back(*code);
+        }
+    }
+
+    return codes;
+}
+
+std::string readFile(const std::string &path)
+{
+    std::string fullCode, word;
+    std::ifstream inFile(path.substr(1, path.size()-2));
+
+    if (!inFile)
+    {
+        qDebug() << "Unable to open file";
+        exit(1);
+    }
+
+    while (inFile >> word)
+        fullCode += word;
+
+    inFile.close();
+
+    return fullCode;
 }
 
 void getCodeSkeleton(Code &code)

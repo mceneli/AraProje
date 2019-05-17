@@ -23,12 +23,12 @@ std::vector <long long> karpRabinHashing(const std::string &str, int k, long lon
 
     long long key = 0;
 
-    for (int i = 0; i < k; ++i)
+    for (size_t i = 0; i < k; ++i)
         key = (key*PRIME_BASE + str[i]) % PRIME_MOD;
 
     hashKeys.push_back(key);
 
-    for (int i = k; i < str.size(); i++)
+    for (size_t i = k; i < str.size(); i++)
     {
         key = positiveMod(key*PRIME_BASE + str[i] - factor*str[i-k], PRIME_MOD);
         hashKeys.push_back(key);

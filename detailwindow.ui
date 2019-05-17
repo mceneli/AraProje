@@ -25,6 +25,10 @@
   <property name="windowTitle">
    <string>Detaylar</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="files.qrc">
+    <normaloff>:/images/images/logo.ico</normaloff>:/images/images/logo.ico</iconset>
+  </property>
   <widget class="QTextBrowser" name="code1_simple">
    <property name="geometry">
     <rect>
@@ -126,6 +130,13 @@
      <height>200</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="styleSheet">
     <string notr="true">QTextBrowser
 {
@@ -133,8 +144,14 @@
 	padding: 10px;
 }</string>
    </property>
+   <property name="documentTitle">
+    <string/>
+   </property>
    <property name="lineWrapMode">
     <enum>QTextEdit::WidgetWidth</enum>
+   </property>
+   <property name="lineWrapColumnOrWidth">
+    <number>0</number>
    </property>
   </widget>
   <widget class="QLabel" name="label_4">
@@ -159,12 +176,25 @@
      <height>200</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="styleSheet">
     <string notr="true">QTextBrowser
 {
 	background: #FFF;
 	padding: 10px;
 }</string>
+   </property>
+   <property name="lineWrapMode">
+    <enum>QTextEdit::FixedPixelWidth</enum>
+   </property>
+   <property name="lineWrapColumnOrWidth">
+    <number>500</number>
    </property>
   </widget>
   <widget class="QLabel" name="code1_label">
@@ -178,13 +208,16 @@
    </property>
    <property name="font">
     <font>
-     <pointsize>12</pointsize>
+     <pointsize>14</pointsize>
+     <italic>false</italic>
+     <underline>true</underline>
+     <strikeout>false</strikeout>
     </font>
    </property>
    <property name="styleSheet">
     <string notr="true">QLabel
 {
-	color: #00a8ff;
+	color: rgb(245, 121, 0);
 }</string>
    </property>
    <property name="text">
@@ -205,13 +238,16 @@
    </property>
    <property name="font">
     <font>
-     <pointsize>12</pointsize>
+     <pointsize>14</pointsize>
+     <italic>false</italic>
+     <underline>true</underline>
+     <strikeout>false</strikeout>
     </font>
    </property>
    <property name="styleSheet">
     <string notr="true">QLabel
 {
-	color: #00a8ff;
+	color: rgb(245, 121, 0);
 }</string>
    </property>
    <property name="text">
@@ -224,9 +260,9 @@
   <widget class="QProgressBar" name="simBar1">
    <property name="geometry">
     <rect>
-     <x>130</x>
+     <x>120</x>
      <y>70</y>
-     <width>141</width>
+     <width>151</width>
      <height>31</height>
     </rect>
    </property>
@@ -266,9 +302,9 @@
   <widget class="QProgressBar" name="simBar2">
    <property name="geometry">
     <rect>
-     <x>740</x>
+     <x>730</x>
      <y>70</y>
-     <width>141</width>
+     <width>151</width>
      <height>31</height>
     </rect>
    </property>
@@ -288,10 +324,13 @@
      <height>40</height>
     </rect>
    </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
+   </property>
    <property name="styleSheet">
     <string notr="true">QPushButton
 {
-	background: #34495e;
+	background: rgb(245, 121, 0);
 	color: #FFF;
 }</string>
    </property>
@@ -308,10 +347,13 @@
      <height>40</height>
     </rect>
    </property>
+   <property name="cursor">
+    <cursorShape>PointingHandCursor</cursorShape>
+   </property>
    <property name="styleSheet">
     <string notr="true">QPushButton
 {
-	background: #34495e;
+	background: rgb(245, 121, 0);
 	color: #FFF;
 }</string>
    </property>
@@ -536,6 +578,8 @@
    </property>
   </widget>
  </widget>
- <resources/>
+ <resources>
+  <include location="files.qrc"/>
+ </resources>
  <connections/>
 </ui>
